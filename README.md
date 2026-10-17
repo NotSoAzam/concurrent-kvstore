@@ -15,28 +15,28 @@ The system features a **3-tier low-latency read hierarchy** combined with an **a
 
 ```mermaid
 flowchart TD
-    Client["Client (redis-cli / netcat / App)"] -->|TCP (RESP / Line Protocol)| Server["cmd/server (Multi-Threaded TCP Server)"]
-    Server -->|Put / Get / Delete / Scan| Engine["pkg/engine (Storage Coordinator)"]
+    Client["Client: redis-cli / netcat / App"] -->|"TCP: RESP / Line Protocol"| Server["cmd/server: Multi-Threaded TCP Server"]
+    Server -->|"Put / Get / Delete / Scan"| Engine["pkg/engine: Storage Coordinator"]
 
     subgraph StorageEngine ["Storage Engine Architecture"]
         direction TB
 
         subgraph ReadWritePath ["Read / Write Hierarchy"]
-            Engine -->|1. Fast-Path O(1)| LRU["pkg/lru (LRU Eviction Cache)"]
-            Engine -->|2. Negative Lookup O(k)| Bloom["pkg/bloom (Optimal Bloom Filter)"]
-            Engine -->|3. Primary Index O(log n)| SkipList["pkg/skiplist (Concurrent SkipList)"]
+            Engine -->|"1. Fast-Path O(1)"| LRU["pkg/lru: LRU Eviction Cache"]
+            Engine -->|"2. Negative Lookup O(k)"| Bloom["pkg/bloom: Optimal Bloom Filter"]
+            Engine -->|"3. Primary Index O(log n)"| SkipList["pkg/skiplist: Concurrent SkipList"]
         end
 
-        subgraph DurabilityLayer ["Durability & Recovery"]
-            Engine -->|Write-Ahead O(1)| WAL["pkg/wal (Append-Only WAL)"]
-            WAL -->|CRC32 Validation| Disk[("Disk Storage (.wal)")]
-            Disk -->|Startup Replay & Checkpoint| Engine
+        subgraph DurabilityLayer ["Durability and Recovery"]
+            Engine -->|"Write-Ahead O(1)"| WAL["pkg/wal: Append-Only WAL"]
+            WAL -->|"CRC32 Validation"| Disk[("Disk Storage .wal")]
+            Disk -->|"Startup Replay and Checkpoint"| Engine
         end
     end
 
-    LRU -.->|Cache Miss| Bloom
-    Bloom -.->|Filter Hit: Check List| SkipList
-    Bloom -.->|Filter Miss: Definite Negative| Engine
+    LRU -.->|"Cache Miss"| Bloom
+    Bloom -.->|"Filter Hit: Check List"| SkipList
+    Bloom -.->|"Filter Miss: Definite Negative"| Engine
 ```
 
 ### Read Tiering Workflow (`Get(key)`):
